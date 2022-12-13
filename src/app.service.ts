@@ -44,4 +44,32 @@ export class AppService {
         console.error(err);
       });
   }
+
+  async downloadFile(): Promise<any> {
+    const filePath = path.join('download/db_data.csv');
+    const writeStream = fs
+      .createWriteStream(filePath, { flags: 'w' })
+      .on('finish', () => {
+        logger.debug('Successfully downloaded file.');
+      })
+      .on('error', (err) => {
+        console.log(err);
+      });
+
+    const data = await this.rabbitMQService.send('load_cars', []);
+    const CSVString = this.convertToCSV(data);
+    writeStream.write(CSVString);
+
+    return CSVString;
+  }
+
+  convertToCSV(arr: string[]) {
+    const array = [Object.keys(arr[0])].concat(arr);
+
+    return array
+      .map((it) => {
+        return Object.values(it).toString();
+      })
+      .join('\n');
+  }
 }
