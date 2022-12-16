@@ -45,31 +45,68 @@ export class AppService {
       });
   }
 
-  async downloadFile(): Promise<any> {
-    const filePath = path.join('download/db_data.csv');
+  async downloadFile(filename: string) {
+    let is_downloaded = false;
+    let offset = 0;
+
+    const filePath = path.join(`download/${filename}.csv`);
+    const filedata = {
+      fileurl: filePath,
+      status: 'In Progress',
+    };
+
     const writeStream = fs
       .createWriteStream(filePath, { flags: 'w' })
-      .on('finish', () => {
-        logger.debug('Successfully downloaded file.');
-      })
       .on('error', (err) => {
         console.log(err);
+      })
+      .on('finish', () => {
+        logger.debug('Successfully downloaded file.');
       });
 
-    const data = await this.rabbitMQService.send('load_cars', []);
-    const CSVString = this.convertToCSV(data);
-    writeStream.write(CSVString);
+    writeStream.write('id,name,licence_plate');
 
-    return CSVString;
+    while (!is_downloaded) {
+      const data = await this.rabbitMQService.send('load_cars', offset);
+
+      if (!data.length) {
+        is_downloaded = true;
+        filedata.status = 'DONE';
+        break;
+      }
+
+      const CSVString = this.convertToCsv(data);
+      if (CSVString) {
+        logger.debug('Downloading...');
+        writeStream.write(CSVString);
+        offset += 100;
+      }
+    }
+
+    writeStream.end();
+    return filedata;
   }
 
-  convertToCSV(arr: string[]) {
-    const array = [Object.keys(arr[0])].concat(arr);
+  convertToCsv = function (data) {
+    const csvRows = [''];
+    const headers = Object.keys(data[0]);
 
-    return array
-      .map((it) => {
-        return Object.values(it).toString();
-      })
-      .join('\n');
+    for (const row of data) {
+      const values = headers.map((header) => {
+        const val = row[header];
+        return val;
+      });
+
+      csvRows.push(values.join(','));
+    }
+    return csvRows.join('\n');
+  };
+
+  async download(filename: string, res) {
+    try {
+      return res.download(`download/${filename}`);
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
