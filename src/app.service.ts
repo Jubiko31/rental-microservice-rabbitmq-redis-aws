@@ -79,7 +79,7 @@ export class AppService {
       if (CSVString) {
         logger.debug('Downloading...');
         writeStream.write(CSVString);
-        offset += 100;
+        offset += 200;
       }
     }
 
