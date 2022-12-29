@@ -42,12 +42,12 @@ export class AppController {
     this.appService.uploadFle(file);
   }
 
-  @Get('/download')
+  @Get('/s3-upload')
   @Header('Content-Type', 'text/csv')
-  async downloadFile() {
+  async uploadToS3() {
     const sessionId: string = uuidv4();
     const filename: string = uuidv4();
-    const filedata: FileData = await this.appService.downloadFile(filename);
+    const filedata: FileData = await this.appService.uploadToS3(filename);
     await this.cacheManager.set(sessionId, filedata);
 
     const data = await this.cacheManager.get(sessionId);

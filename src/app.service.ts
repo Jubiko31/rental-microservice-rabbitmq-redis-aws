@@ -4,12 +4,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as csv from 'csv-parser';
 import * as fsExtra from 'fs-extra';
+import { S3Service } from './s3/s3.service';
 
 const logger = new Logger('FileUploadService');
 
 @Injectable()
 export class AppService {
-  constructor(private readonly rabbitMQService: RabbitMQService) {}
+  constructor(
+    private readonly rabbitMQService: RabbitMQService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   uploadFle(file: Express.Multer.File) {
     let tmp = [];
@@ -45,13 +49,13 @@ export class AppService {
       });
   }
 
-  async downloadFile(filename: string) {
+  async uploadToS3(filename: string) {
     let is_downloaded = false;
     let offset = 0;
 
     const filePath = path.join(`download/${filename}.csv`);
     const filedata = {
-      fileurl: filePath,
+      fileurl: '',
       status: 'In Progress',
     };
 
@@ -84,6 +88,10 @@ export class AppService {
     }
 
     writeStream.end();
+
+    const s3Url = await this.s3Service.uploadFileToS3(filePath, filename);
+    filedata.fileurl = s3Url;
+
     return filedata;
   }
 
