@@ -1,9 +1,11 @@
-# Microservice with NestJS, RabbitMQ, Redis
+# Microservice with NestJS, RabbitMQ, + AWS S3
 
-## `Stack: NestJS, RabbitMQ, Redis`
+## `Stack: NestJS, RabbitMQ, Redis, Bull, AWS S3`
 ![nestjs](https://user-images.githubusercontent.com/53910160/207401771-ce4def86-565f-42ef-b018-310855a374aa.png) &nbsp;
 ![rabbitmq](https://user-images.githubusercontent.com/53910160/207403205-1c1f9e33-ede5-4e0b-95b8-fe19d5f69861.png) &nbsp;
-![redis](https://user-images.githubusercontent.com/53910160/207403277-111bc5e2-3dd8-4e01-b04c-a4df3594b580.png)
+![redis](https://user-images.githubusercontent.com/53910160/207403277-111bc5e2-3dd8-4e01-b04c-a4df3594b580.png) &nbsp;
+![bull](https://user-images.githubusercontent.com/53910160/209970205-d4e56c8d-ae48-435f-a562-99b6c86da46a.png) &nbsp;
+![s3](https://user-images.githubusercontent.com/53910160/209970744-30ed2eda-61cc-495c-8c4e-d6d9d988d41c.png)
 
 
 Microservice for main rental app: https://github.com/Jubiko31/rental-system-nestjs-docker.
