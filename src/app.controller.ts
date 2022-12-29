@@ -8,7 +8,6 @@ import {
   CACHE_MANAGER,
   Inject,
   Param,
-  Res,
 } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { AppService } from './app.service';
@@ -54,14 +53,9 @@ export class AppController {
     return data;
   }
 
-  @Get('/:id')
+  @Get('/single-file/:id')
   async getRedisData(@Param('id') id: string) {
     const fileData = await this.cacheManager.get(id);
     return fileData;
-  }
-
-  @Get('download/:fileId')
-  async downlod(@Param('fileId') filename: string, @Res() response) {
-    return await this.appService.download(filename, response);
   }
 }

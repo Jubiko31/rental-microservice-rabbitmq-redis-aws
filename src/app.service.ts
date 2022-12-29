@@ -1,15 +1,14 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { RabbitMQService } from './rabbit-mq.service';
+import { S3Service } from './s3/s3.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as csv from 'csv-parser';
 import * as fsExtra from 'fs-extra';
-import { S3Service } from './s3/s3.service';
-
-const logger = new Logger('FileUploadService');
 
 @Injectable()
 export class AppService {
+  private readonly logger = new Logger('FileUploadService');
   constructor(
     private readonly rabbitMQService: RabbitMQService,
     private readonly s3Service: S3Service,
@@ -22,7 +21,7 @@ export class AppService {
         'Invalid file provided. [X] Allowed filetype: .csv',
       );
     }
-    logger.verbose('[201] File uploaded successfully. 📁');
+    this.logger.verbose('[201] File uploaded successfully. 📁');
 
     const fileName = file.filename;
     const filePath = path.join(`upload/${fileName}`);
@@ -31,18 +30,18 @@ export class AppService {
       .on('data', (chunk) => {
         tmp.push(chunk);
         if (tmp.length == 100) {
-          logger.debug('Reached 100. Sending...');
+          this.logger.debug('Reached 100. Sending...');
           this.rabbitMQService.send('append_cars', tmp);
           tmp = [];
         }
       })
       .on('end', () => {
-        logger.debug('Sending last rows...');
+        this.logger.debug('Sending last rows...');
         this.rabbitMQService.send('append_cars', tmp);
         tmp = [];
-        logger.log('[X] DONE ✅');
+        this.logger.log('[X] DONE ✅');
         fsExtra.emptyDirSync('upload');
-        logger.warn('[X] File deleted successfully. ❌');
+        this.logger.warn('[X] File deleted successfully. ❌');
       })
       .on('error', (err) => {
         console.error(err);
@@ -52,7 +51,6 @@ export class AppService {
   async uploadToS3(filename: string) {
     let is_downloaded = false;
     let offset = 0;
-
     const filePath = path.join(`download/${filename}.csv`);
     const filedata = {
       fileurl: '',
@@ -65,56 +63,41 @@ export class AppService {
         console.log(err);
       })
       .on('finish', () => {
-        logger.debug('Successfully downloaded file.');
+        this.logger.debug('Successfully downloaded file.');
       });
-
     writeStream.write('id,name,licence_plate');
 
     while (!is_downloaded) {
       const data = await this.rabbitMQService.send('load_cars', offset);
-
       if (!data.length) {
         is_downloaded = true;
         filedata.status = 'DONE';
         break;
       }
-
       const CSVString = this.convertToCsv(data);
       if (CSVString) {
-        logger.debug('Downloading...');
+        this.logger.debug('Downloading...');
         writeStream.write(CSVString);
         offset += 200;
       }
     }
-
     writeStream.end();
 
     const s3Url = await this.s3Service.uploadFileToS3(filePath, filename);
     filedata.fileurl = s3Url;
-
     return filedata;
   }
 
   convertToCsv = function (data) {
     const csvRows = [''];
     const headers = Object.keys(data[0]);
-
     for (const row of data) {
       const values = headers.map((header) => {
         const val = row[header];
         return val;
       });
-
       csvRows.push(values.join(','));
     }
     return csvRows.join('\n');
   };
-
-  async download(filename: string, res) {
-    try {
-      return res.download(`download/${filename}`);
-    } catch (err) {
-      console.error(err);
-    }
-  }
 }
