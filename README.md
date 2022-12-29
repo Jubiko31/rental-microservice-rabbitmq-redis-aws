@@ -7,7 +7,7 @@
 
 
 Microservice for main rental app: https://github.com/Jubiko31/rental-system-nestjs-docker.
-Used streaming for file upload/download. For database used Redis.
+Streaming to add local csv file as cars data to database, download and upload car data as csv file to Amazon S3. Redis for cache management, Bull for repeatable jobs, to clear local download's directory.
 
 ## Installation
 
